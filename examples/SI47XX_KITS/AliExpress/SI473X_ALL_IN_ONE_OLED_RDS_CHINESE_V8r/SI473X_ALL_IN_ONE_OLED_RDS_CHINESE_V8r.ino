@@ -71,16 +71,9 @@
   Prototype documentation: https://pu2clr.github.io/SI4735/
   PU2CLR Si47XX API documentation: https://pu2clr.github.io/SI4735/extras/apidoc/html/
 
-  Donate 
-  If you find this project useful, consider making a donation so that the author of this library can purchase components
-  and modules for improvements and testing of this library. 
-  Click here to donate: https://www.paypal.com/donate/?business=LLV4PHKTXC4JW&no_recurring=0&item_name=Consider+making+a+donation.+So%2C+I+can+purchase+components+and+modules+for+improvements+and+testing+of+this+library.&currency_code=USD
-
   By Ricardo Lima Caratti, April  2021.
   Improved by EFWob (https://github.com/EFWob) Jan 2022.
-
 */
-
 #define DEBUG  // Comment/uncomment for disabling/enabling debug output on Serial
 //#define DEBUG_BUTTONS_ONLY  // If defined (in addition to DEBUG), just do DEBUG output for Buttons (radio will not play at all)
 
@@ -135,7 +128,7 @@ const uint16_t cmd_0x15_size = sizeof cmd_0x15;          // Array of lines where
 
 #define SSB 1
 
-#define STORE_TIME 10000  // Time of inactivity to make the current receiver status writable (10s / 10000 milliseconds).
+#define STORE_TIME 30000  // Time of inactivity to make the current receiver status writable (10s / 10000 milliseconds).
 
 const uint8_t app_id = 43;  // Useful to check the EEPROM content before processing useful data
 const int eeprom_address = 0;
@@ -150,11 +143,11 @@ bool bfoOn = false;
 bool ssbLoaded = false;
 bool fmStereo = true;
 
-bool cmdVolume = false;    // if true, the encoder will control the volume.
+bool cmdVolume = true;    // if true, the encoder will control the volume.
 bool cmdAgcAtt = false;    // if true, the encoder will control the AGC / Attenuation
 bool cmdStep = false;      // if true, the encoder will control the step frequency
 bool cmdBw = false;        // if true, the encoder will control the bandwidth
-bool cmdBand = false;      // if true, the encoder will control the band
+bool cmdBand = true;      // if true, the encoder will control the band
 bool cmdSoftMute = false;  // if true, the encoder will control the Soft Mute attenuation
 bool cmdAvc = false;       // if true, the encoder will control Automatic Volume Control
 
@@ -258,21 +251,21 @@ typedef struct
   int8_t bandwidthIdx;      // Index of the table bandwidthFM, bandwidthAM or bandwidthSSB;
 } Band;
 
-/*
-   Band table
-   YOU CAN CONFIGURE YOUR OWN BAND PLAN. Be guided by the comments.
-   To add a new band, all you have to do is insert a new line in the table below. No extra code will be needed.
-   You can remove a band by deleting a line if you do not want a given band.
-   Also, you can change the parameters of the band.
-   ATTENTION: You have to RESET the eeprom after adding or removing a line of this table.
-              Turn your receiver on with the encoder push button pressed at first time to RESET the eeprom content.
-*/
+// /*
+//    Band table
+//    YOU CAN CONFIGURE YOUR OWN BAND PLAN. Be guided by the comments.
+//    To add a new band, all you have to do is insert a new line in the table below. No extra code will be needed.
+//    You can remove a band by deleting a line if you do not want a given band.
+//    Also, you can change the parameters of the band.
+//    ATTENTION: You have to RESET the eeprom after adding or removing a line of this table.
+//               Turn your receiver on with the encoder push button pressed at first time to RESET the eeprom content.
+// */
 Band band[] = {
   { LW_BAND_TYPE, 100, 510, 300, 0, 4 },
   { MW_BAND_TYPE, 520, 1720, 810, 3, 4 },    // AM/MW from 520 to 1720kHz; default 810kHz; default step frequency index is 3 (10kHz); default bandwidth index is 4 (3kHz)
   { MW_BAND_TYPE, 531, 1701, 783, 2, 4 },    // MW for Europe, Africa and Asia
   { SW_BAND_TYPE, 1700, 3500, 1900, 0, 4 },  // 160 meters
-  { SW_BAND_TYPE, 3500, 4500, 3700, 0, 5 },  // 80 meters
+  { SW_BAND_TYPE, 3400, 5500, 3500, 0, 5 },  // 80 meters
   { SW_BAND_TYPE, 4500, 5600, 4850, 1, 4 },
   { SW_BAND_TYPE, 5600, 6800, 6000, 1, 4 },
   { SW_BAND_TYPE, 6800, 7300, 7100, 0, 4 },  // 40 meters
@@ -281,7 +274,7 @@ Band band[] = {
   { SW_BAND_TYPE, 10000, 11200, 10100, 0, 4 },  // 30 meters
   { SW_BAND_TYPE, 11200, 12500, 11940, 1, 4 },
   { SW_BAND_TYPE, 13400, 13900, 13600, 1, 4 },
-  { SW_BAND_TYPE, 14000, 14500, 14200, 0, 4 },  // 20 meters
+  { SW_BAND_TYPE, 14000, 14500, 14000, 0, 4 },  // 20 meters
   { SW_BAND_TYPE, 15000, 15900, 15300, 1, 4 },
   { SW_BAND_TYPE, 17200, 17900, 17600, 1, 4 },
   { SW_BAND_TYPE, 18000, 18300, 18100, 0, 4 },  // 17 meters
@@ -293,6 +286,8 @@ Band band[] = {
   { FM_BAND_TYPE, 6400, 8400, 7000, 3, 0 },     // FM from 64 to 84MHz; default 70MHz; default step frequency index is 3; default bandwidth index AUTO
   { FM_BAND_TYPE, 8400, 10800, 10570, 3, 0 }
 };
+
+
 
 const int lastBand = (sizeof band / sizeof(Band)) - 1;
 int bandIdx = 1;
@@ -322,18 +317,11 @@ void setup() {
   oled.on();
   oled.setFont(FONT6X8);
 
-  // Splash - Change orit for your introduction text or remove the splash code.
-  oled.setCursor(40, 0);
-  oled.print("SI473X");
+
   oled.setCursor(20, 1);
-  oled.print("Arduino Library");
-  delay(100);
-  oled.setCursor(15, 2);
-  oled.print("All in One Radio");
-  delay(100);
-  oled.setCursor(10, 3);
-  oled.print("V3.0.8-By PU2CLR");
-  delay(1000);
+  oled.print("Radio de Aggie!");
+
+  delay(3000);
   // end Splash
 
   // If you want to reset the eeprom, keep the VOLUME_UP button pressed during statup
@@ -341,7 +329,7 @@ void setup() {
     oled.clear();
     EEPROM.write(eeprom_address, 0);
     oled.setCursor(0, 0);
-    oled.print("EEPROM RESETED");
+    oled.print("EEPROM RESET");
     delay(2000);
     oled.clear();
   }
@@ -1023,11 +1011,16 @@ char *stationName;
 char *programInfo;
 
 long delayStationName = millis();
-long delayProgramInfo = millis();
+long delayProgramInfo = millis(); 
 long delayMsgTurn = millis();
-bool bShowStationName = true;
-int progInfoIdx = 0;
+bool bShowStationName = true;  
+int  progInfoIdx = 0;
 
+
+void clearRdsText(char *txt, int size) {
+  for (int i = 0; i < size; i++) 
+    if ( txt[i] < 32 ) txt[i] = ' ';
+}
 
 /*
    Clean the content of the third line (line 2 - remember the first line is 0)
@@ -1049,7 +1042,7 @@ void showProgramInfo() {
   strncpy(txtAux, &programInfo[progInfoIdx], sizeof(txtAux));
   txtAux[20] = '\0';
   progInfoIdx += 2;
-  if (progInfoIdx > (int)(60 - sizeof(txtAux))) progInfoIdx = 0;
+  if (progInfoIdx > (60 - sizeof(txtAux)) ) progInfoIdx = 0;
   oled.setCursor(0, 2);
   oled.print(txtAux);
   delayProgramInfo = millis();
@@ -1057,37 +1050,36 @@ void showProgramInfo() {
 
 
 void showStationName() {
-  if (stationName == NULL || (millis() - delayStationName) < 3000) return;
-  cleanBfoRdsInfo();
-  oled.setCursor(0, 2);
-  oled.print(stationName);
-  delayStationName = millis();
+    if (stationName == NULL || (millis() - delayStationName) < 3000) return;
+    cleanBfoRdsInfo();
+    oled.setCursor(0, 2);
+    oled.print(stationName);
+    delayStationName = millis();
 }
 
 
 /*
    Checks the station name is available
 */
-void checkRDS() {
-  if (currentFrequency != previousFrequency) {
-    cleanBfoRdsInfo();
-  } else {
-    si4735.getRdsStatus();
-    if (si4735.getRdsReceived()) {
-      if (si4735.getRdsSync() && si4735.getNumRdsFifoUsed() > 0) {
-        if ((millis() - delayMsgTurn) > 30000) {
+void checkRDS()
+{
+  si4735.getRdsStatus();
+  if (si4735.getRdsReceived())
+  {
+    if (si4735.getRdsSync() && si4735.getNumRdsFifoUsed() > 0)
+    {
+        if ( (millis() - delayMsgTurn) > 30000 ) {
           bShowStationName = !bShowStationName;
           progInfoIdx = 0;
           delayMsgTurn = millis();
-        }
-        if (bShowStationName) {  // time to show Station Name
-          stationName = si4735.getRdsStationName();
-          showStationName();
-        } else {  // time to show Program Information
+        } 
+        if (bShowStationName) { // time to show Station Name 
+           stationName = si4735.getRdsStationName();
+           showStationName();
+        } else { // time to show Program Information
           programInfo = si4735.getRdsProgramInformation();
           showProgramInfo();
         }
-      }
     }
   }
 }
